@@ -9,15 +9,15 @@
 body{
   margin:0;
   font-family:system-ui,Arial;
-  background:#f4f6f8;
+  background:#f2f4f7;
 }
 .container{
-  max-width:1000px;
+  max-width:900px;
   margin:30px auto;
   background:#fff;
-  padding:25px;
-  border-radius:12px;
-  box-shadow:0 10px 30px rgba(0,0,0,.1);
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 10px 25px rgba(0,0,0,.1);
 }
 .hidden{display:none}
 h2{margin-top:0}
@@ -29,34 +29,24 @@ textarea,input,button{
 }
 button{
   border:0;
-  border-radius:8px;
+  border-radius:6px;
   cursor:pointer;
 }
 .btn-login{background:#333;color:#fff}
-.btn-gerar{background:#1c9bd6;color:#fff}
-.btn-whats{background:#25d366;color:#fff;font-size:13px}
-.card{
-  background:#f9f9f9;
-  padding:15px;
-  border-radius:8px;
+.btn-aplicar{background:#1c9bd6;color:#fff}
+.btn-whats{background:#25d366;color:#fff;padding:6px 10px;font-size:13px}
+table{
+  width:100%;
+  border-collapse:collapse;
   margin-top:15px;
 }
-.lista{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-  gap:10px;
-}
-.item{
-  background:#fff;
+th,td{
   border:1px solid #ddd;
-  padding:10px;
-  border-radius:8px;
+  padding:8px;
   font-size:13px;
+  text-align:left;
 }
-.counter{
-  font-weight:700;
-  margin-bottom:10px;
-}
+th{background:#eee}
 footer{
   text-align:center;
   font-size:12px;
@@ -70,7 +60,7 @@ footer{
 
 <!-- LOGIN -->
 <div class="container" id="loginBox">
-  <h2>🔐 Login Operador</h2>
+  <h2>🔐 Login do Operador</h2>
   <input id="user" placeholder="Usuário">
   <input id="pass" type="password" placeholder="Senha">
   <button class="btn-login" onclick="login()">Entrar</button>
@@ -79,35 +69,34 @@ footer{
 <!-- PAINEL -->
 <div class="container hidden" id="painel">
 
-  <h2>📲 Envio em Massa – LR Empréstimo</h2>
+  <h2>📋 Lista de Contatos – LR Empréstimo</h2>
 
-  <div class="counter">
-    Total de contatos enviados: <span id="total">0</span>
-  </div>
+  <textarea id="lista" rows="6" placeholder="Cole TODOS os números aqui (qualquer formato)"></textarea>
 
-  <div class="card">
-    <input id="operador" placeholder="Nome do operador">
-
-    <textarea id="mensagem" rows="3">
+  <textarea id="mensagem" rows="3">
 Olá! Aqui é da LR Empréstimo.
-Você tem uma oportunidade de crédito liberada.
-Posso te explicar rapidinho?
-    </textarea>
+Temos uma oportunidade de crédito disponível para você.
+Posso te explicar?
+  </textarea>
 
-    <textarea id="listaNumeros" rows="6" placeholder="Cole aqui a lista de números (um por linha, com DDD)"></textarea>
+  <input id="operador" placeholder="Nome do operador">
 
-    <button class="btn-gerar" onclick="gerar()">Gerar contatos</button>
-  </div>
+  <button class="btn-aplicar" onclick="aplicar()">Aplicar</button>
 
-  <div class="card">
-    <h3>Contatos gerados</h3>
-    <div class="lista" id="contatos"></div>
-  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Número</th>
+        <th>Ação</th>
+      </tr>
+    </thead>
+    <tbody id="tabela"></tbody>
+  </table>
 
 </div>
 
 <footer>
-LR Empréstimo © 2026 – Sistema Operacional
+LR Empréstimo © 2026
 </footer>
 
 <script>
@@ -117,53 +106,52 @@ function login(){
   if(user.value==="adminglps" && pass.value==="admin1533"){
     loginBox.classList.add("hidden");
     painel.classList.remove("hidden");
-    carregarContador();
   }else{
     alert("Usuário ou senha incorretos");
   }
 }
 
-async function carregarContador(){
-  const r = await fetch(API+"/contador");
-  const d = await r.json();
-  total.innerText = d.total;
-}
+function aplicar(){
+  tabela.innerHTML = "";
 
-function gerar(){
-  contatos.innerHTML = "";
-  const nums = listaNumeros.value
+  const numeros = lista.value
     .split(/\s+/)
-    .map(n=>n.replace(/\D/g,""))
-    .filter(n=>n.length>=10);
+    .map(n => n.replace(/\D/g,""))
+    .filter(n => n.length >= 10);
 
-  nums.forEach(n=>{
-    const div = document.createElement("div");
-    div.className="item";
-    div.innerHTML = `
-      <strong>${n}</strong><br><br>
-      <button class="btn-whats" onclick="enviar('${n}')">WhatsApp</button>
+  numeros.forEach(numero => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${numero}</td>
+      <td>
+        <button class="btn-whats" onclick="contatar('${numero}')">
+          WhatsApp
+        </button>
+      </td>
     `;
-    contatos.appendChild(div);
+    tabela.appendChild(tr);
   });
 }
 
-async function enviar(numero){
+async function contatar(numero){
   const msg = mensagem.value;
 
+  // salva na API
   await fetch(API+"/enviar",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       operador: operador.value || "Operador",
-      numero,
+      numero: numero,
       mensagem: msg
     })
   });
 
   const texto = encodeURIComponent(msg);
-  window.open(`https://wa.me/${numero}?text=${texto}`,"_blank");
-
-  carregarContador();
+  window.open(
+    `https://api.whatsapp.com/send?phone=${numero}&text=${texto}`,
+    "_blank"
+  );
 }
 </script>
 
