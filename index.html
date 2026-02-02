@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Painel Operador | LR Empréstimo</title>
+
+<style>
+body{
+  margin:0;
+  font-family:system-ui, Arial;
+  background:#f4f6f8;
+}
+.container{
+  max-width:900px;
+  margin:30px auto;
+  background:#fff;
+  padding:25px;
+  border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.1);
+}
+h2{margin-top:0}
+.hidden{display:none}
+input,textarea,button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  font-size:14px;
+}
+button{
+  border:0;
+  border-radius:8px;
+  background:#25d366;
+  color:#fff;
+  cursor:pointer;
+}
+button:hover{opacity:.9}
+.card{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:8px;
+  margin-top:15px;
+}
+.counter{
+  font-size:18px;
+  font-weight:700;
+  margin-bottom:10px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+th,td{
+  border:1px solid #ddd;
+  padding:8px;
+  font-size:13px;
+}
+th{background:#eee}
+footer{
+  text-align:center;
+  font-size:12px;
+  color:#666;
+  margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div class="container" id="loginBox">
+  <h2>🔐 Acesso do Operador</h2>
+  <input id="user" placeholder="Usuário">
+  <input id="pass" type="password" placeholder="Senha">
+  <button onclick="login()">Entrar</button>
+</div>
+
+<!-- PAINEL -->
+<div class="container hidden" id="painel">
+
+  <h2>📲 Painel Operador – LR Empréstimo</h2>
+
+  <div class="counter">
+    Total de mensagens enviadas: <span id="total">0</span>
+  </div>
+
+  <div class="card">
+    <h3>Enviar mensagem</h3>
+    <input id="operador" placeholder="Nome do operador">
+    <input id="numero" placeholder="Número com DDD (ex: 5516999999999)">
+    <textarea id="mensagem" placeholder="Mensagem para o cliente"></textarea>
+    <button onclick="enviar()">Enviar via WhatsApp</button>
+  </div>
+
+  <div class="card">
+    <h3>Histórico de envios</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Operador</th>
+          <th>Número</th>
+          <th>Mensagem</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody id="lista"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<footer>
+LR Empréstimo © 2026 – Painel Operacional
+</footer>
+
+<script>
+const API = "https://api-emprestimo-operador.onrender.com";
+
+function login(){
+  const u = user.value;
+  const p = pass.value;
+
+  if(u === "adminglps" && p === "admin1533"){
+    loginBox.classList.add("hidden");
+    painel.classList.remove("hidden");
+    carregar();
+  }else{
+    alert("Usuário ou senha incorretos");
+  }
+}
+
+async function carregar(){
+  const c = await fetch(API+"/contador").then(r=>r.json());
+  total.innerText = c.total;
+
+  const h = await fetch(API+"/historico").then(r=>r.json());
+  lista.innerHTML = "";
+  h.forEach(i=>{
+    lista.innerHTML += `
+      <tr>
+        <td>${i.operador}</td>
+        <td>${i.numero}</td>
+        <td>${i.mensagem}</td>
+        <td>${i.data}</td>
+      </tr>
+    `;
+  });
+}
+
+async function enviar(){
+  if(!numero.value || !mensagem.value){
+    alert("Preencha número e mensagem");
+    return;
+  }
+
+  await fetch(API+"/enviar",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      operador: operador.value || "Operador",
+      numero: numero.value,
+      mensagem: mensagem.value
+    })
+  });
+
+  const texto = encodeURIComponent(mensagem.value);
+  window.open(`https://wa.me/${numero.value}?text=${texto}`,"_blank");
+
+  numero.value="";
+  mensagem.value="";
+  carregar();
+}
+
+setInterval(carregar,5000);
+</script>
+
+</body>
+</html>
