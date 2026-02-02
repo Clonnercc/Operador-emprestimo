@@ -1,27 +1,27 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Painel Operador | LR Empréstimo</title>
 
 <style>
 body{
   margin:0;
-  font-family:system-ui, Arial;
+  font-family:system-ui,Arial;
   background:#f4f6f8;
 }
 .container{
-  max-width:900px;
+  max-width:1000px;
   margin:30px auto;
   background:#fff;
   padding:25px;
   border-radius:12px;
   box-shadow:0 10px 30px rgba(0,0,0,.1);
 }
-h2{margin-top:0}
 .hidden{display:none}
-input,textarea,button{
+h2{margin-top:0}
+textarea,input,button{
   width:100%;
   padding:12px;
   margin-top:10px;
@@ -30,33 +30,33 @@ input,textarea,button{
 button{
   border:0;
   border-radius:8px;
-  background:#25d366;
-  color:#fff;
   cursor:pointer;
 }
-button:hover{opacity:.9}
+.btn-login{background:#333;color:#fff}
+.btn-gerar{background:#1c9bd6;color:#fff}
+.btn-whats{background:#25d366;color:#fff;font-size:13px}
 .card{
   background:#f9f9f9;
   padding:15px;
   border-radius:8px;
   margin-top:15px;
 }
+.lista{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:10px;
+}
+.item{
+  background:#fff;
+  border:1px solid #ddd;
+  padding:10px;
+  border-radius:8px;
+  font-size:13px;
+}
 .counter{
-  font-size:18px;
   font-weight:700;
   margin-bottom:10px;
 }
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:10px;
-}
-th,td{
-  border:1px solid #ddd;
-  padding:8px;
-  font-size:13px;
-}
-th{background:#eee}
 footer{
   text-align:center;
   font-size:12px;
@@ -70,109 +70,101 @@ footer{
 
 <!-- LOGIN -->
 <div class="container" id="loginBox">
-  <h2>🔐 Acesso do Operador</h2>
+  <h2>🔐 Login Operador</h2>
   <input id="user" placeholder="Usuário">
   <input id="pass" type="password" placeholder="Senha">
-  <button onclick="login()">Entrar</button>
+  <button class="btn-login" onclick="login()">Entrar</button>
 </div>
 
 <!-- PAINEL -->
 <div class="container hidden" id="painel">
 
-  <h2>📲 Painel Operador – LR Empréstimo</h2>
+  <h2>📲 Envio em Massa – LR Empréstimo</h2>
 
   <div class="counter">
-    Total de mensagens enviadas: <span id="total">0</span>
+    Total de contatos enviados: <span id="total">0</span>
   </div>
 
   <div class="card">
-    <h3>Enviar mensagem</h3>
     <input id="operador" placeholder="Nome do operador">
-    <input id="numero" placeholder="Número com DDD (ex: 5516999999999)">
-    <textarea id="mensagem" placeholder="Mensagem para o cliente"></textarea>
-    <button onclick="enviar()">Enviar via WhatsApp</button>
+
+    <textarea id="mensagem" rows="3">
+Olá! Aqui é da LR Empréstimo.
+Você tem uma oportunidade de crédito liberada.
+Posso te explicar rapidinho?
+    </textarea>
+
+    <textarea id="listaNumeros" rows="6" placeholder="Cole aqui a lista de números (um por linha, com DDD)"></textarea>
+
+    <button class="btn-gerar" onclick="gerar()">Gerar contatos</button>
   </div>
 
   <div class="card">
-    <h3>Histórico de envios</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Operador</th>
-          <th>Número</th>
-          <th>Mensagem</th>
-          <th>Data</th>
-        </tr>
-      </thead>
-      <tbody id="lista"></tbody>
-    </table>
+    <h3>Contatos gerados</h3>
+    <div class="lista" id="contatos"></div>
   </div>
 
 </div>
 
 <footer>
-LR Empréstimo © 2026 – Painel Operacional
+LR Empréstimo © 2026 – Sistema Operacional
 </footer>
 
 <script>
 const API = "https://api-emprestimo-operador.onrender.com";
 
 function login(){
-  const u = user.value;
-  const p = pass.value;
-
-  if(u === "adminglps" && p === "admin1533"){
+  if(user.value==="adminglps" && pass.value==="admin1533"){
     loginBox.classList.add("hidden");
     painel.classList.remove("hidden");
-    carregar();
+    carregarContador();
   }else{
     alert("Usuário ou senha incorretos");
   }
 }
 
-async function carregar(){
-  const c = await fetch(API+"/contador").then(r=>r.json());
-  total.innerText = c.total;
+async function carregarContador(){
+  const r = await fetch(API+"/contador");
+  const d = await r.json();
+  total.innerText = d.total;
+}
 
-  const h = await fetch(API+"/historico").then(r=>r.json());
-  lista.innerHTML = "";
-  h.forEach(i=>{
-    lista.innerHTML += `
-      <tr>
-        <td>${i.operador}</td>
-        <td>${i.numero}</td>
-        <td>${i.mensagem}</td>
-        <td>${i.data}</td>
-      </tr>
+function gerar(){
+  contatos.innerHTML = "";
+  const nums = listaNumeros.value
+    .split(/\s+/)
+    .map(n=>n.replace(/\D/g,""))
+    .filter(n=>n.length>=10);
+
+  nums.forEach(n=>{
+    const div = document.createElement("div");
+    div.className="item";
+    div.innerHTML = `
+      <strong>${n}</strong><br><br>
+      <button class="btn-whats" onclick="enviar('${n}')">WhatsApp</button>
     `;
+    contatos.appendChild(div);
   });
 }
 
-async function enviar(){
-  if(!numero.value || !mensagem.value){
-    alert("Preencha número e mensagem");
-    return;
-  }
+async function enviar(numero){
+  const msg = mensagem.value;
 
   await fetch(API+"/enviar",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       operador: operador.value || "Operador",
-      numero: numero.value,
-      mensagem: mensagem.value
+      numero,
+      mensagem: msg
     })
   });
 
-  const texto = encodeURIComponent(mensagem.value);
-  window.open(`https://wa.me/${numero.value}?text=${texto}`,"_blank");
+  const texto = encodeURIComponent(msg);
+  window.open(`https://wa.me/${numero}?text=${texto}`,"_blank");
 
-  numero.value="";
-  mensagem.value="";
-  carregar();
+  carregarContador();
 }
-
-setInterval(carregar,5000);
 </script>
 
 </body>
